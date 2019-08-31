@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+EBOOT.PBP
+PARAM.SFO
+
+*~
+*.prx
