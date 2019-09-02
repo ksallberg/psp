@@ -1,4 +1,4 @@
-TARGET=hello_world
+TARGET=app
 OBJS=main.o callback.o
 
 INCDIR=
@@ -13,7 +13,7 @@ LIBS=-lm
 BUILD_PRX=1
 
 EXTRA_TARGETS=EBOOT.PBP
-PSP_EBOOT_TITLE=Hello world
+PSP_EBOOT_TITLE=Kristians spel
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
