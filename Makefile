@@ -1,5 +1,5 @@
 TARGET=app
-OBJS=main.o callback.o
+OBJS=main.o callbacks.o vram.o
 
 INCDIR=
 CFLAGS=-G0 -Wall -O2
@@ -8,12 +8,12 @@ ASFLAGS=$(CFLAGS)
 
 LIBDIR=
 LDFLAGS=
-LIBS=-lm
+LIBS= -lpspgum -lpspgu -lm
 
 BUILD_PRX=1
 
 EXTRA_TARGETS=EBOOT.PBP
-PSP_EBOOT_TITLE=Kristians spel
+PSP_EBOOT_TITLE=Kristians spel2
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak

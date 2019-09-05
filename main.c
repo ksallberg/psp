@@ -2,7 +2,7 @@
 #include <pspdebug.h>
 #include <pspdisplay.h>
 
-#include "callback.h"
+#include "callbacks.h"
 
 #define VERS 1
 #define REVS 0
@@ -16,9 +16,10 @@ PSP_HEAP_SIZE_MAX();
 int main(void)
 {
   pspDebugScreenInit();
-  setupExitCallback();
+  setupCallbacks();
+  /* setupExitCallback(); */
 
-  while(isRunning()) {
+  while(running()) {
     pspDebugScreenSetXY(20, 20);
     printf("Hello World! \n \n Test!!!");
     sceDisplayWaitVblankStart();
