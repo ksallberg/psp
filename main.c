@@ -74,13 +74,13 @@ int main(int argc, char* argv[])
   srand(time(0));
 
   for (i = 0; i < NUM_VERTICES; ++i)
-    {
-      position[i].x = (((float)rand())/RAND_MAX) * (SCR_WIDTH-1);
-      position[i].y = (((float)rand())/RAND_MAX) * (SCR_HEIGHT-1);
+  {
+    position[i].x = (((float)rand())/RAND_MAX) * (SCR_WIDTH-1);
+    position[i].y = (((float)rand())/RAND_MAX) * (SCR_HEIGHT-1);
 
-      direction[i].x = (((float)rand())/(RAND_MAX/2)-1.0f) * SPEED;
-      direction[i].y = (((float)rand())/(RAND_MAX/2)-1.0f) * SPEED;
-    }
+    direction[i].x = (((float)rand())/(RAND_MAX/2)-1.0f) * SPEED;
+    direction[i].y = (((float)rand())/(RAND_MAX/2)-1.0f) * SPEED;
+  }
 
   // setup GU
 
@@ -108,97 +108,98 @@ int main(int argc, char* argv[])
   // run sample
 
   while(running())
+  {
+    unsigned int i,j;
+    unsigned int result;
+
+    // update lines
+
+    for (i = 0; i < NUM_VERTICES; ++i)
     {
-      unsigned int i,j;
-      unsigned int result;
+      position[i].x += direction[i].x;
+      position[i].y += direction[i].y;
 
-      // update lines
-
-      for (i = 0; i < NUM_VERTICES; ++i)
-        {
-          position[i].x += direction[i].x;
-          position[i].y += direction[i].y;
-
-          if (position[i].x < 0)
-            {
-              position[i].x = 0;
-              direction[i].x = (((float)rand())/RAND_MAX) * SPEED;
-              direction[i].y += 0.1f * (direction[i].y / fabsf(direction[i].y));
-            }
-          else if (position[i].x >= SCR_WIDTH)
-            {
-              position[i].x = (SCR_WIDTH-1);
-              direction[i].x = -(((float)rand())/RAND_MAX) * SPEED;
-              direction[i].y += 0.1f * (direction[i].y / fabsf(direction[i].y));
-            }
-
-          if (position[i].y < 0)
-            {
-              position[i].y = 0;
-              direction[i].x += 0.1f * (direction[i].x / fabsf(direction[i].x));
-              direction[i].y = (0.1f+((float)rand())/RAND_MAX) * SPEED;
-            }
-          else if (position[i].y >= SCR_HEIGHT)
-            {
-              position[i].y = (SCR_HEIGHT-1);
-              direction[i].x += 0.1f * (direction[i].x / fabsf(direction[i].x));
-              direction[i].y = -(0.1f+((float)rand())/RAND_MAX) * SPEED;
-            }
-
-          lines[curr_line][i].x = position[i].x;
-          lines[curr_line][i].y = position[i].y;
-        }
-      curr_line = (curr_line+1) % NUM_LINES;
-
-      fade += FADE_SPEED;
-      if (fade >= 1.0f)
-        {
-          fade -= 1.0f;
-          color_index = (color_index+1) & 7;
-        }
-
-      sceGuStart(GU_DIRECT,list);
-
-      // clear screen
-
-      sceGuClearColor(0);
-      sceGuClear(GU_COLOR_BUFFER_BIT);
-
-      // render lines
-
-      result = 0;
-      for (i = 0; i < 4; ++i) {
-        int ca = (colors[color_index] >> (i*8)) & 0xff;
-        int cb = (colors[(color_index+1)&7] >> (i*8)) & 0xff;
-        result |= ((unsigned char)(ca + (cb-ca) * fade)) << (i*8);
+      if (position[i].x < 0)
+      {
+        position[i].x = 0;
+        direction[i].x = (((float)rand())/RAND_MAX) * SPEED;
+        direction[i].y += 0.1f * (direction[i].y / fabsf(direction[i].y));
       }
-      sceGuColor(result);
+      else if (position[i].x >= SCR_WIDTH)
+      {
+        position[i].x = (SCR_WIDTH-1);
+        direction[i].x = -(((float)rand())/RAND_MAX) * SPEED;
+        direction[i].y += 0.1f * (direction[i].y / fabsf(direction[i].y));
+      }
 
-      for (i = 0; i < NUM_LINES; ++i)
-        {
-          // we make local copies of the line into the main buffer here,
-          // so we don't have to flush the cache
+      if (position[i].y < 0)
+      {
+        position[i].y = 0;
+        direction[i].x += 0.1f * (direction[i].x / fabsf(direction[i].x));
+        direction[i].y = (0.1f+((float)rand())/RAND_MAX) * SPEED;
+      }
+      else if (position[i].y >= SCR_HEIGHT)
+      {
+        position[i].y = (SCR_HEIGHT-1);
+        direction[i].x += 0.1f * (direction[i].x / fabsf(direction[i].x));
+        direction[i].y = -(0.1f+((float)rand())/RAND_MAX) * SPEED;
+      }
 
-          struct Vertex* vertices = sceGuGetMemory((NUM_VERTICES+1) *
-                                                   sizeof(struct Vertex));
-
-          // create a lineloop
-
-          for (j = 0; j < NUM_VERTICES; ++j)
-            vertices[j] = lines[i][j];
-          vertices[NUM_VERTICES] = lines[i][0];
-          sceGuDrawArray(GU_LINE_STRIP,GU_VERTEX_32BITF|GU_TRANSFORM_2D,
-                         (NUM_VERTICES+1),0,vertices);
-        }
-
-      // wait for next frame
-
-      sceGuFinish();
-      sceGuSync(0,0);
-
-      sceDisplayWaitVblankStart();
-      sceGuSwapBuffers();
+      lines[curr_line][i].x = position[i].x;
+      lines[curr_line][i].y = position[i].y;
     }
+    curr_line = (curr_line+1) % NUM_LINES;
+
+    fade += FADE_SPEED;
+    if (fade >= 1.0f)
+    {
+      fade -= 1.0f;
+      color_index = (color_index+1) & 7;
+    }
+
+    sceGuStart(GU_DIRECT,list);
+
+    // clear screen
+
+    sceGuClearColor(0);
+    sceGuClear(GU_COLOR_BUFFER_BIT);
+
+    // render lines
+
+    result = 0;
+    for (i = 0; i < 4; ++i) {
+      int ca = (colors[color_index] >> (i*8)) & 0xff;
+      int cb = (colors[(color_index+1)&7] >> (i*8)) & 0xff;
+      result |= ((unsigned char)(ca + (cb-ca) * fade)) << (i*8);
+    }
+    sceGuColor(result);
+
+    for (i = 0; i < NUM_LINES; ++i)
+    {
+      // we make local copies of the line into the main buffer here,
+      // so we don't have to flush the cache
+
+      struct Vertex* vertices = sceGuGetMemory((NUM_VERTICES+1) *
+                                               sizeof(struct Vertex));
+
+      // create a lineloop
+
+      for (j = 0; j < NUM_VERTICES; ++j) {
+        vertices[j] = lines[i][j];
+      }
+      vertices[NUM_VERTICES] = lines[i][0];
+      sceGuDrawArray(GU_LINE_STRIP,GU_VERTEX_32BITF|GU_TRANSFORM_2D,
+                     (NUM_VERTICES+1),0,vertices);
+    }
+
+    // wait for next frame
+
+    sceGuFinish();
+    sceGuSync(0,0);
+
+    sceDisplayWaitVblankStart();
+    sceGuSwapBuffers();
+  }
 
   sceGuTerm();
 
