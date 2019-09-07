@@ -5,6 +5,7 @@
 #include <pspkernel.h>
 #include <pspdisplay.h>
 #include <pspdebug.h>
+#include <pspctrl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -16,8 +17,13 @@
 #include "callbacks.h"
 #include "vram.h"
 
-PSP_MODULE_INFO("Lines Sample", 0, 1, 1);
+#define VERS 1
+#define REVS 0
+
+PSP_MODULE_INFO("programmet", PSP_MODULE_USER, VERS, REVS);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER);
+
+#define printf pspDebugScreenPrintf
 
 static unsigned int __attribute__((aligned(16))) list[262144];
 
@@ -29,12 +35,6 @@ struct Vertex
 #define BUF_WIDTH (512)
 #define SCR_WIDTH (480)
 #define SCR_HEIGHT (272)
-
-#define NUM_SLICES 128
-#define NUM_ROWS 128
-#define RING_SIZE 2.0f
-#define RING_RADIUS 1.0f
-#define SPRITE_SIZE 0.025f
 
 unsigned int colors[8] =
   {
@@ -48,45 +48,31 @@ unsigned int colors[8] =
     0xff00ffff
   };
 
-#define NUM_LINES 12
-#define NUM_VERTICES 8
-#define SPEED 4.0f
-#define FADE_SPEED 0.015f;
-
-struct Vertex lines[NUM_LINES][NUM_VERTICES];
-unsigned int curr_line = 0;
-struct Vertex position[8];
-struct Vertex direction[8];
-
-float fade = 0;
-unsigned int color_index = 0;
+#define NUM_VERTICES 4
 
 int main(int argc, char* argv[])
 {
-  unsigned int i;
-
-  setupCallbacks();
-
-  // initialize lines
-
-  memset(lines,0,sizeof(lines));
-
-  srand(time(0));
-
-  for (i = 0; i < NUM_VERTICES; ++i)
-  {
-    position[i].x = (((float)rand())/RAND_MAX) * (SCR_WIDTH-1);
-    position[i].y = (((float)rand())/RAND_MAX) * (SCR_HEIGHT-1);
-
-    direction[i].x = (((float)rand())/(RAND_MAX/2)-1.0f) * SPEED;
-    direction[i].y = (((float)rand())/(RAND_MAX/2)-1.0f) * SPEED;
-  }
-
-  // setup GU
 
   void* fbp0 = getStaticVramBuffer(BUF_WIDTH,SCR_HEIGHT,GU_PSM_8888);
   void* fbp1 = getStaticVramBuffer(BUF_WIDTH,SCR_HEIGHT,GU_PSM_8888);
   void* zbp = getStaticVramBuffer(BUF_WIDTH,SCR_HEIGHT,GU_PSM_4444);
+
+  int x_pos = 100;
+  int y_pos = 100;
+
+  SceCtrlData button_input;
+
+  pspDebugScreenInit();
+  setupCallbacks();
+
+  sceCtrlSetSamplingCycle(0);
+  sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
+
+  // initialize lines
+
+  srand(time(0));
+
+  // setup GU
 
   sceGuInit();
 
@@ -107,95 +93,51 @@ int main(int argc, char* argv[])
 
   // run sample
 
-  while(running())
-  {
-    unsigned int i,j;
-    unsigned int result;
-
-    // update lines
-
-    for (i = 0; i < NUM_VERTICES; ++i)
-    {
-      position[i].x += direction[i].x;
-      position[i].y += direction[i].y;
-
-      if (position[i].x < 0)
-      {
-        position[i].x = 0;
-        direction[i].x = (((float)rand())/RAND_MAX) * SPEED;
-        direction[i].y += 0.1f * (direction[i].y / fabsf(direction[i].y));
-      }
-      else if (position[i].x >= SCR_WIDTH)
-      {
-        position[i].x = (SCR_WIDTH-1);
-        direction[i].x = -(((float)rand())/RAND_MAX) * SPEED;
-        direction[i].y += 0.1f * (direction[i].y / fabsf(direction[i].y));
-      }
-
-      if (position[i].y < 0)
-      {
-        position[i].y = 0;
-        direction[i].x += 0.1f * (direction[i].x / fabsf(direction[i].x));
-        direction[i].y = (0.1f+((float)rand())/RAND_MAX) * SPEED;
-      }
-      else if (position[i].y >= SCR_HEIGHT)
-      {
-        position[i].y = (SCR_HEIGHT-1);
-        direction[i].x += 0.1f * (direction[i].x / fabsf(direction[i].x));
-        direction[i].y = -(0.1f+((float)rand())/RAND_MAX) * SPEED;
-      }
-
-      lines[curr_line][i].x = position[i].x;
-      lines[curr_line][i].y = position[i].y;
-    }
-    curr_line = (curr_line+1) % NUM_LINES;
-
-    fade += FADE_SPEED;
-    if (fade >= 1.0f)
-    {
-      fade -= 1.0f;
-      color_index = (color_index+1) & 7;
-    }
+  while(running()) {
 
     sceGuStart(GU_DIRECT,list);
 
     // clear screen
-
     sceGuClearColor(0);
     sceGuClear(GU_COLOR_BUFFER_BIT);
 
-    // render lines
+    // color
+    sceGuColor(colors[0]);
 
-    result = 0;
-    for (i = 0; i < 4; ++i) {
-      int ca = (colors[color_index] >> (i*8)) & 0xff;
-      int cb = (colors[(color_index+1)&7] >> (i*8)) & 0xff;
-      result |= ((unsigned char)(ca + (cb-ca) * fade)) << (i*8);
-    }
-    sceGuColor(result);
+    // draw vertices
+    struct Vertex* vertices = sceGuGetMemory((NUM_VERTICES) *
+                                             sizeof(struct Vertex));
 
-    for (i = 0; i < NUM_LINES; ++i)
-    {
-      // we make local copies of the line into the main buffer here,
-      // so we don't have to flush the cache
+    sceCtrlPeekBufferPositive(&button_input, 1);
 
-      struct Vertex* vertices = sceGuGetMemory((NUM_VERTICES+1) *
-                                               sizeof(struct Vertex));
+    x_pos = button_input.Lx;
+    y_pos = button_input.Ly;
 
-      // create a lineloop
+    vertices[0].x = x_pos;
+    vertices[0].y = y_pos;
 
-      for (j = 0; j < NUM_VERTICES; ++j) {
-        vertices[j] = lines[i][j];
-      }
-      vertices[NUM_VERTICES] = lines[i][0];
-      sceGuDrawArray(GU_LINE_STRIP,GU_VERTEX_32BITF|GU_TRANSFORM_2D,
-                     (NUM_VERTICES+1),0,vertices);
-    }
+    vertices[1].x = x_pos + 100;
+    vertices[1].y = y_pos + 100;
+
+    vertices[2].x = x_pos;
+    vertices[2].y = y_pos + 100;
+
+    vertices[3].x = x_pos;
+    vertices[3].y = y_pos;
+
+    sceGuDrawArray(GU_LINE_STRIP,
+                   GU_VERTEX_32BITF|GU_TRANSFORM_2D,
+                   NUM_VERTICES,
+                   0,
+                   vertices);
 
     // wait for next frame
 
     sceGuFinish();
     sceGuSync(0,0);
+
+    pspDebugScreenSetXY(0, 0);
+    printf("Hello World! %d", x_pos);
 
     sceDisplayWaitVblankStart();
     sceGuSwapBuffers();
