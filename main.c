@@ -137,7 +137,20 @@ int main(int argc, char* argv[])
     sceGuSync(0,0);
 
     pspDebugScreenSetXY(0, 0);
-    printf("Hello World! %d", x_pos);
+    if(button_input.Buttons != 0) {
+      if(button_input.Buttons & PSP_CTRL_CROSS) {
+        printf("x");
+      }
+      if(button_input.Buttons & PSP_CTRL_CIRCLE) {
+        printf("o");
+      }
+      if(button_input.Buttons & PSP_CTRL_SQUARE) {
+        printf("fyrkant");
+      }
+      if(button_input.Buttons & PSP_CTRL_TRIANGLE) {
+        printf("triangel");
+      }
+    }
 
     sceDisplayWaitVblankStart();
     sceGuSwapBuffers();
