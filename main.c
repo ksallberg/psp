@@ -59,6 +59,12 @@ int main(int argc, char* argv[])
 
   int x_pos = 100;
   int y_pos = 100;
+  int player_size = 25;
+
+  int wagger_x = 200;
+  int wagger_y = 200;
+  int wagger_move = 1;
+  int wagger_size = 50;
 
   SceCtrlData button_input;
 
@@ -95,6 +101,8 @@ int main(int argc, char* argv[])
 
   while(running()) {
 
+    sceCtrlPeekBufferPositive(&button_input, 1);
+
     sceGuStart(GU_DIRECT,list);
 
     // clear screen
@@ -105,10 +113,7 @@ int main(int argc, char* argv[])
     sceGuColor(colors[0]);
 
     // draw vertices
-    struct Vertex* vertices = sceGuGetMemory((NUM_VERTICES) *
-                                             sizeof(struct Vertex));
-
-    sceCtrlPeekBufferPositive(&button_input, 1);
+    struct Vertex* vertices = sceGuGetMemory(4 * sizeof(struct Vertex));
 
     x_pos = button_input.Lx;
     y_pos = button_input.Ly;
@@ -116,11 +121,11 @@ int main(int argc, char* argv[])
     vertices[0].x = x_pos;
     vertices[0].y = y_pos;
 
-    vertices[1].x = x_pos + 100;
-    vertices[1].y = y_pos + 100;
+    vertices[1].x = x_pos + player_size;
+    vertices[1].y = y_pos + player_size;
 
     vertices[2].x = x_pos;
-    vertices[2].y = y_pos + 100;
+    vertices[2].y = y_pos + player_size;
 
     vertices[3].x = x_pos;
     vertices[3].y = y_pos;
@@ -130,6 +135,39 @@ int main(int argc, char* argv[])
                    NUM_VERTICES,
                    0,
                    vertices);
+    // wagger
+    struct Vertex* wagger_vertices = sceGuGetMemory(4 * sizeof(struct Vertex));
+
+    if(wagger_y < 25) {
+      wagger_move = 1;
+    }
+
+    if(wagger_y > 200) {
+      wagger_move = -1;
+    }
+
+    // color
+    sceGuColor(colors[2]);
+
+    wagger_y += wagger_move;
+
+    wagger_vertices[0].x = wagger_x;
+    wagger_vertices[0].y = wagger_y;
+
+    wagger_vertices[1].x = wagger_x + wagger_size;
+    wagger_vertices[1].y = wagger_y + wagger_size;
+
+    wagger_vertices[2].x = wagger_x;
+    wagger_vertices[2].y = wagger_y + wagger_size;
+
+    wagger_vertices[3].x = wagger_x;
+    wagger_vertices[3].y = wagger_y;
+
+    sceGuDrawArray(GU_LINE_STRIP,
+                   GU_VERTEX_32BITF|GU_TRANSFORM_2D,
+                   NUM_VERTICES,
+                   0,
+                   wagger_vertices);
 
     // wait for next frame
 
