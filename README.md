@@ -31,4 +31,4 @@ and a Vector Floating Point Unit.
 
 # docker attempt
 
-* docker run -v: mountpoint
+* docker run --name hackburk2 -it --mount type=bind,source=/Users/kristiansallberg/Documents/psp,target=/home/psp ubuntu
