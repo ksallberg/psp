@@ -57,8 +57,8 @@ int main(int argc, char* argv[])
   void* fbp1 = getStaticVramBuffer(BUF_WIDTH,SCR_HEIGHT,GU_PSM_8888);
   void* zbp = getStaticVramBuffer(BUF_WIDTH,SCR_HEIGHT,GU_PSM_4444);
 
-  int x_pos = 100;
-  int y_pos = 100;
+  float x_pos = 100;
+  float y_pos = 100;
   int player_size = 25;
 
   int wagger_x = 200;
@@ -115,8 +115,14 @@ int main(int argc, char* argv[])
     // draw vertices
     struct Vertex* vertices = sceGuGetMemory(4 * sizeof(struct Vertex));
 
-    x_pos = button_input.Lx;
-    y_pos = button_input.Ly;
+    // button_input.Lx is something between 0 and 255
+    float x_diff = button_input.Lx - 128;
+    float y_diff = button_input.Ly - 128;
+
+    // TODO: cut off movement if too small, threshold
+    x_pos += (x_diff / 33);
+    y_pos += (y_diff / 33);
+    printf("lX: %.6f , lY %.6f", x_diff, y_diff);
 
     vertices[0].x = x_pos;
     vertices[0].y = y_pos;
