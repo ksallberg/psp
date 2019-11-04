@@ -20,7 +20,7 @@
 #define VERS 1
 #define REVS 0
 
-PSP_MODULE_INFO("programmet", PSP_MODULE_USER, VERS, REVS);
+PSP_MODULE_INFO("the program", PSP_MODULE_USER, VERS, REVS);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER);
 
 #define printf pspDebugScreenPrintf
@@ -145,10 +145,10 @@ int main(int argc, char* argv[])
         printf("o");
       }
       if(button_input.Buttons & PSP_CTRL_SQUARE) {
-        printf("fyrkant");
+        printf("square");
       }
       if(button_input.Buttons & PSP_CTRL_TRIANGLE) {
-        printf("triangel");
+        printf("triangle");
       }
     }
 
