@@ -20,7 +20,7 @@
 #define VERS 1
 #define REVS 0
 
-PSP_MODULE_INFO("programmet", PSP_MODULE_USER, VERS, REVS);
+PSP_MODULE_INFO("waggers", PSP_MODULE_USER, VERS, REVS);
 PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER);
 
 #define printf pspDebugScreenPrintf
@@ -31,6 +31,12 @@ struct Vertex
 {
   float x,y,z;
 };
+
+typedef struct Scene
+{
+  /* struct Vertex[] player; */
+  int apa;
+} scene;
 
 #define BUF_WIDTH (512)
 #define SCR_WIDTH (480)
@@ -145,7 +151,7 @@ int main(int argc, char* argv[])
                    0,
                    vertices);
     // wagger
-    struct Vertex* wagger_vertices = sceGuGetMemory(4 * sizeof(struct Vertex));
+    struct Vertex* wagger_vertices = sceGuGetMemory(5 * sizeof(struct Vertex));
 
     if(wagger_y < 25) {
       wagger_move = 1;
@@ -170,7 +176,10 @@ int main(int argc, char* argv[])
     wagger_vertices[2].y = wagger_y + wagger_size;
 
     wagger_vertices[3].x = wagger_x;
-    wagger_vertices[3].y = wagger_y;
+    wagger_vertices[3].y = wagger_y - wagger_size;
+
+    wagger_vertices[4].x = wagger_x;
+    wagger_vertices[4].y = wagger_y;
 
     sceGuDrawArray(GU_LINE_STRIP,
                    GU_VERTEX_32BITF|GU_TRANSFORM_2D,
