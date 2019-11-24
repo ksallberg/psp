@@ -47,3 +47,7 @@ The PSP's main microprocessor is a multifunction device
 named "Allegrex" that includes a 32-bit MIPS32 R4k-based
 CPU (Little Endian), a Floating Point Unit,
 and a Vector Floating Point Unit.
+
+# Copy to the actual PSP device
+
+This is specific to my Mac Mini. Run copy_to_psp.h when the PSP is in USB mode.
