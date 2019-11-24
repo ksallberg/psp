@@ -20,8 +20,15 @@ and then ran './toolchain.sh'.
 I could not compile psptoolchain on my latest&greatest macOS computer,
 and had to resort to docker:
 
+#### Create
+
 ```
 docker run --name hackburk2 -it --mount type=bind,source=/Users/kristiansallberg/Documents/psp,target=/home/psp ubuntu
+```
+
+#### Enter again
+```
+docker exec -it hackburk2 bash
 ```
 
 Go to /home/psp, source env.sh and make
