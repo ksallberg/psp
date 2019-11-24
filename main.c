@@ -119,9 +119,12 @@ int main(int argc, char* argv[])
     float x_diff = button_input.Lx - 128;
     float y_diff = button_input.Ly - 128;
 
-    // TODO: cut off movement if too small, threshold
-    x_pos += (x_diff / 33);
-    y_pos += (y_diff / 33);
+    if(abs(x_diff) > 20) {
+      x_pos += (x_diff / 33);
+    }
+    if(abs(y_diff) > 20) {
+      y_pos += (y_diff / 33);
+    }
     printf("lX: %.6f , lY %.6f", x_diff, y_diff);
 
     vertices[0].x = x_pos;
