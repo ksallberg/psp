@@ -40,6 +40,7 @@ struct Vertex
 typedef struct Scene
 {
   Point player;
+  Point waggers[10];
   int scroll;
   int apa;
 } Scene;
@@ -73,8 +74,18 @@ int main(int argc, char* argv[])
 
   int player_size = 25;
 
-  int wagger_x = 200;
-  int wagger_y = 200;
+  scene.waggers[0].x = 200;
+  scene.waggers[0].y = 100;
+
+  scene.waggers[1].x = 300;
+  scene.waggers[1].y = 160;
+
+  scene.waggers[2].x = 400;
+  scene.waggers[2].y = 200;
+
+  scene.waggers[3].x = 500;
+  scene.waggers[3].y = 130;
+
   int wagger_move = 1;
   int wagger_size = 50;
 
@@ -160,41 +171,49 @@ int main(int argc, char* argv[])
                    NUM_VERTICES,
                    0,
                    vertices);
-    // wagger
-    struct Vertex* wagger_vertices = sceGuGetMemory(5 * sizeof(struct Vertex));
 
-    if(wagger_y < 25) {
-      wagger_move = 1;
+
+    int i = 0;
+    for(i = 0; i < 4; i ++) {
+      int wagger_x = scene.waggers[i].x;
+      int wagger_y = scene.waggers[i].y;
+      // wagger
+      struct Vertex* wagger_vertices =
+        sceGuGetMemory(5 * sizeof(struct Vertex));
+
+      if(wagger_y < 25) {
+        wagger_move = 1;
+      }
+
+      if(wagger_y > 200) {
+        wagger_move = -1;
+      }
+
+      // color
+      sceGuColor(colors[2]);
+
+      scene.waggers[i].y += wagger_move;
+
+      int wagx = wagger_x - scene.scroll;
+
+      wagger_vertices[0].x = wagx;
+      wagger_vertices[0].y = wagger_y;
+
+      wagger_vertices[1].x = wagx + wagger_size;
+      wagger_vertices[1].y = wagger_y + wagger_size;
+
+      wagger_vertices[2].x = wagx;
+      wagger_vertices[2].y = wagger_y + wagger_size;
+
+      wagger_vertices[3].x = wagx;
+      wagger_vertices[3].y = wagger_y;
+
+      sceGuDrawArray(GU_LINE_STRIP,
+                     GU_VERTEX_32BITF|GU_TRANSFORM_2D,
+                     NUM_VERTICES,
+                     0,
+                     wagger_vertices);
     }
-
-    if(wagger_y > 200) {
-      wagger_move = -1;
-    }
-
-    // color
-    sceGuColor(colors[2]);
-
-    wagger_y += wagger_move;
-
-    int wagx = wagger_x - scene.scroll;
-
-    wagger_vertices[0].x = wagx;
-    wagger_vertices[0].y = wagger_y;
-
-    wagger_vertices[1].x = wagx + wagger_size;
-    wagger_vertices[1].y = wagger_y + wagger_size;
-
-    wagger_vertices[2].x = wagx;
-    wagger_vertices[2].y = wagger_y + wagger_size;
-
-    wagger_vertices[3].x = wagx;
-    wagger_vertices[3].y = wagger_y;
-
-    sceGuDrawArray(GU_LINE_STRIP,
-                   GU_VERTEX_32BITF|GU_TRANSFORM_2D,
-                   NUM_VERTICES,
-                   0,
-                   wagger_vertices);
 
     // wait for next frame
     sceGuFinish();
