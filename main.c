@@ -27,6 +27,11 @@ PSP_MAIN_THREAD_ATTR(THREAD_ATTR_USER);
 
 static unsigned int __attribute__((aligned(16))) list[262144];
 
+typedef struct Point
+{
+  float x,y;
+} Point;
+
 struct Vertex
 {
   float x,y,z;
@@ -34,9 +39,10 @@ struct Vertex
 
 typedef struct Scene
 {
-  /* struct Vertex[] player; */
+  Point player;
+  int scroll;
   int apa;
-} scene;
+} Scene;
 
 #define BUF_WIDTH (512)
 #define SCR_WIDTH (480)
@@ -59,12 +65,12 @@ unsigned int colors[8] =
 int main(int argc, char* argv[])
 {
 
+  Scene scene;
+
   void* fbp0 = getStaticVramBuffer(BUF_WIDTH,SCR_HEIGHT,GU_PSM_8888);
   void* fbp1 = getStaticVramBuffer(BUF_WIDTH,SCR_HEIGHT,GU_PSM_8888);
   void* zbp = getStaticVramBuffer(BUF_WIDTH,SCR_HEIGHT,GU_PSM_4444);
 
-  float x_pos = 100;
-  float y_pos = 100;
   int player_size = 25;
 
   int wagger_x = 200;
@@ -105,6 +111,10 @@ int main(int argc, char* argv[])
 
   // run sample
 
+  scene.scroll = 0;
+  scene.player.x = 50;
+  scene.player.y = 100;
+
   while(running()) {
 
     sceCtrlPeekBufferPositive(&button_input, 1);
@@ -126,24 +136,24 @@ int main(int argc, char* argv[])
     float y_diff = button_input.Ly - 128;
 
     if(abs(x_diff) > 20) {
-      x_pos += (x_diff / 33);
+      scene.scroll += (x_diff / 33);
     }
     if(abs(y_diff) > 20) {
-      y_pos += (y_diff / 33);
+      scene.player.y += (y_diff / 33);
     }
     printf("lX: %.6f , lY %.6f", x_diff, y_diff);
 
-    vertices[0].x = x_pos;
-    vertices[0].y = y_pos;
+    vertices[0].x = scene.player.x;
+    vertices[0].y = scene.player.y;
 
-    vertices[1].x = x_pos + player_size;
-    vertices[1].y = y_pos + player_size;
+    vertices[1].x = scene.player.x + player_size;
+    vertices[1].y = scene.player.y + player_size;
 
-    vertices[2].x = x_pos;
-    vertices[2].y = y_pos + player_size;
+    vertices[2].x = scene.player.x;
+    vertices[2].y = scene.player.y + player_size;
 
-    vertices[3].x = x_pos;
-    vertices[3].y = y_pos;
+    vertices[3].x = scene.player.x;
+    vertices[3].y = scene.player.y;
 
     sceGuDrawArray(GU_LINE_STRIP,
                    GU_VERTEX_32BITF|GU_TRANSFORM_2D,
@@ -166,20 +176,19 @@ int main(int argc, char* argv[])
 
     wagger_y += wagger_move;
 
-    wagger_vertices[0].x = wagger_x;
+    int wagx = wagger_x - scene.scroll;
+
+    wagger_vertices[0].x = wagx;
     wagger_vertices[0].y = wagger_y;
 
-    wagger_vertices[1].x = wagger_x + wagger_size;
+    wagger_vertices[1].x = wagx + wagger_size;
     wagger_vertices[1].y = wagger_y + wagger_size;
 
-    wagger_vertices[2].x = wagger_x;
+    wagger_vertices[2].x = wagx;
     wagger_vertices[2].y = wagger_y + wagger_size;
 
-    wagger_vertices[3].x = wagger_x;
-    wagger_vertices[3].y = wagger_y - wagger_size;
-
-    wagger_vertices[4].x = wagger_x;
-    wagger_vertices[4].y = wagger_y;
+    wagger_vertices[3].x = wagx;
+    wagger_vertices[3].y = wagger_y;
 
     sceGuDrawArray(GU_LINE_STRIP,
                    GU_VERTEX_32BITF|GU_TRANSFORM_2D,
@@ -188,7 +197,6 @@ int main(int argc, char* argv[])
                    wagger_vertices);
 
     // wait for next frame
-
     sceGuFinish();
     sceGuSync(0,0);
 
