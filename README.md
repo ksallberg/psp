@@ -51,3 +51,7 @@ and a Vector Floating Point Unit.
 # Copy to the actual PSP device
 
 This is specific to my Mac Mini. Run copy_to_psp.h when the PSP is in USB mode.
+
+# PSP emulator - ppsspp
+
+So I don't have to move everything to the PSP all the time.

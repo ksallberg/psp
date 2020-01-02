@@ -190,7 +190,14 @@ int main(int argc, char* argv[])
       }
 
       // color
-      sceGuColor(colors[2]);
+      int player_right_x = scene.player.x + scene.scroll + player_size;
+      int player_left_x = scene.player.x + scene.scroll;
+      if(player_right_x >= wagger_x &&
+         player_left_x <= wagger_x + wagger_size) {
+        sceGuColor(colors[4]);
+      } else {
+        sceGuColor(colors[2]);
+      }
 
       scene.waggers[i].y += wagger_move;
 
