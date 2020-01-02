@@ -61,7 +61,7 @@ unsigned int colors[8] =
     0xff00ffff
   };
 
-#define NUM_VERTICES 4
+#define NUM_VERTICES 5
 
 int main(int argc, char* argv[])
 {
@@ -140,7 +140,8 @@ int main(int argc, char* argv[])
     sceGuColor(colors[0]);
 
     // draw vertices
-    struct Vertex* vertices = sceGuGetMemory(4 * sizeof(struct Vertex));
+    struct Vertex* vertices =
+      sceGuGetMemory(NUM_VERTICES * sizeof(struct Vertex));
 
     // button_input.Lx is something between 0 and 255
     float x_diff = button_input.Lx - 128;
@@ -158,20 +159,22 @@ int main(int argc, char* argv[])
     vertices[0].y = scene.player.y;
 
     vertices[1].x = scene.player.x + player_size;
-    vertices[1].y = scene.player.y + player_size;
+    vertices[1].y = scene.player.y;
 
-    vertices[2].x = scene.player.x;
+    vertices[2].x = scene.player.x + player_size;
     vertices[2].y = scene.player.y + player_size;
 
     vertices[3].x = scene.player.x;
-    vertices[3].y = scene.player.y;
+    vertices[3].y = scene.player.y + player_size;
+
+    vertices[4].x = scene.player.x;
+    vertices[4].y = scene.player.y;
 
     sceGuDrawArray(GU_LINE_STRIP,
                    GU_VERTEX_32BITF|GU_TRANSFORM_2D,
                    NUM_VERTICES,
                    0,
                    vertices);
-
 
     int i = 0;
     for(i = 0; i < 4; i ++) {
@@ -194,7 +197,14 @@ int main(int argc, char* argv[])
       int player_left_x = scene.player.x + scene.scroll;
       if(player_right_x >= wagger_x &&
          player_left_x <= wagger_x + wagger_size) {
-        sceGuColor(colors[4]);
+        int player_top_y = scene.player.y;
+        int player_bottom_y = scene.player.y + player_size;
+        if(player_top_y <= wagger_y + wagger_size &&
+           player_bottom_y >= wagger_y) {
+          sceGuColor(colors[4]);
+        } else {
+          sceGuColor(colors[2]);
+        }
       } else {
         sceGuColor(colors[2]);
       }
@@ -207,13 +217,16 @@ int main(int argc, char* argv[])
       wagger_vertices[0].y = wagger_y;
 
       wagger_vertices[1].x = wagx + wagger_size;
-      wagger_vertices[1].y = wagger_y + wagger_size;
+      wagger_vertices[1].y = wagger_y;
 
-      wagger_vertices[2].x = wagx;
+      wagger_vertices[2].x = wagx + wagger_size;
       wagger_vertices[2].y = wagger_y + wagger_size;
 
       wagger_vertices[3].x = wagx;
-      wagger_vertices[3].y = wagger_y;
+      wagger_vertices[3].y = wagger_y + wagger_size;
+
+      wagger_vertices[4].x = wagx;
+      wagger_vertices[4].y = wagger_y;
 
       sceGuDrawArray(GU_LINE_STRIP,
                      GU_VERTEX_32BITF|GU_TRANSFORM_2D,
