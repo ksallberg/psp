@@ -41,8 +41,9 @@ typedef struct Scene
 {
   Point player;
   Point waggers[10];
+  int wagger_len;
   int scroll;
-  int apa;
+  int goal;
 } Scene;
 
 #define BUF_WIDTH (512)
@@ -63,8 +64,128 @@ unsigned int colors[8] =
 
 #define NUM_VERTICES 5
 
+void draw_wagger(struct Vertex *vertices, Scene *scene, int index) {
+  int wagger_x = scene->waggers[index].x;
+  int wagger_y = scene->waggers[index].y;
+  int wagger_size = 50;
+  int player_size = 25;
+  // color
+  int player_right_x = scene->player.x + scene->scroll + player_size;
+  int player_left_x = scene->player.x + scene->scroll;
+  if(player_right_x >= wagger_x &&
+     player_left_x <= wagger_x + wagger_size) {
+    int player_top_y = scene->player.y;
+    int player_bottom_y = scene->player.y + player_size;
+    if(player_top_y <= wagger_y + wagger_size &&
+       player_bottom_y >= wagger_y) {
+      sceGuColor(colors[4]);
+    } else {
+      sceGuColor(colors[2]);
+    }
+  } else {
+    sceGuColor(colors[2]);
+  }
+
+  int wagx = wagger_x - scene->scroll;
+
+  vertices[0].x = wagx;
+  vertices[0].y = wagger_y;
+
+  vertices[1].x = wagx + wagger_size;
+  vertices[1].y = wagger_y;
+
+  vertices[2].x = wagx + wagger_size;
+  vertices[2].y = wagger_y + wagger_size;
+
+  vertices[3].x = wagx;
+  vertices[3].y = wagger_y + wagger_size;
+
+  vertices[4].x = wagx;
+  vertices[4].y = wagger_y;
+
+  sceGuDrawArray(GU_LINE_STRIP,
+                 GU_VERTEX_32BITF|GU_TRANSFORM_2D,
+                 NUM_VERTICES,
+                 0,
+                 vertices);
+}
+
+void draw_player(struct Vertex *vertices, Scene *scene) {
+
+  int player_size = 25;
+
+  vertices[0].x = scene->player.x;
+  vertices[0].y = scene->player.y;
+
+  vertices[1].x = scene->player.x + player_size;
+  vertices[1].y = scene->player.y;
+
+  vertices[2].x = scene->player.x + player_size;
+  vertices[2].y = scene->player.y + player_size;
+
+  vertices[3].x = scene->player.x;
+  vertices[3].y = scene->player.y + player_size;
+
+  vertices[4].x = scene->player.x;
+  vertices[4].y = scene->player.y;
+
+  // color
+  sceGuColor(colors[3]);
+
+  sceGuDrawArray(GU_LINE_STRIP,
+                 GU_VERTEX_32BITF|GU_TRANSFORM_2D,
+                 NUM_VERTICES,
+                 0,
+                 vertices);
+}
+
+draw_goal(struct Vertex *vertices, Scene *scene) {
+
+  vertices[0].x = scene->goal - scene->scroll;
+  vertices[0].y = 0;
+
+  vertices[1].x = scene->goal - scene->scroll;
+  vertices[1].y = 500;
+
+  int num_vertices = 2;
+
+  // color
+  sceGuColor(colors[5]);
+
+  sceGuDrawArray(GU_LINE_STRIP,
+                 GU_VERTEX_32BITF|GU_TRANSFORM_2D,
+                 num_vertices,
+                 0,
+                 vertices);
+}
+
+scene_for_level(Scene *scene, int level) {
+  switch(level) {
+  case 1:
+    scene->goal = 600;
+    scene->wagger_len = 4;
+    scene->waggers[0].x = 200;
+    scene->waggers[0].y = 100;
+    scene->waggers[1].x = 300;
+    scene->waggers[1].y = 160;
+    scene->waggers[2].x = 400;
+    scene->waggers[2].y = 200;
+    scene->waggers[3].x = 500;
+    scene->waggers[3].y = 130;
+    scene->scroll = 0;
+    scene->player.x = 50;
+    scene->player.y = 100;
+    break;
+
+  default:
+    scene->goal = 0;
+  }
+}
+
 int main(int argc, char* argv[])
 {
+
+  int level = 1;
 
   Scene scene;
 
@@ -72,22 +193,9 @@ int main(int argc, char* argv[])
   void* fbp1 = getStaticVramBuffer(BUF_WIDTH,SCR_HEIGHT,GU_PSM_8888);
   void* zbp = getStaticVramBuffer(BUF_WIDTH,SCR_HEIGHT,GU_PSM_4444);
 
-  int player_size = 25;
-
-  scene.waggers[0].x = 200;
-  scene.waggers[0].y = 100;
-
-  scene.waggers[1].x = 300;
-  scene.waggers[1].y = 160;
-
-  scene.waggers[2].x = 400;
-  scene.waggers[2].y = 200;
-
-  scene.waggers[3].x = 500;
-  scene.waggers[3].y = 130;
+  scene_for_level(&scene, level);
 
   int wagger_move = 1;
-  int wagger_size = 50;
 
   SceCtrlData button_input;
 
@@ -102,7 +210,6 @@ int main(int argc, char* argv[])
   srand(time(0));
 
   // setup GU
-
   sceGuInit();
 
   sceGuStart(GU_DIRECT,list);
@@ -120,12 +227,7 @@ int main(int argc, char* argv[])
   sceDisplayWaitVblankStart();
   sceGuDisplay(GU_TRUE);
 
-  // run sample
-
-  scene.scroll = 0;
-  scene.player.x = 50;
-  scene.player.y = 100;
-
+  // game loop
   while(running()) {
 
     sceCtrlPeekBufferPositive(&button_input, 1);
@@ -136,12 +238,11 @@ int main(int argc, char* argv[])
     sceGuClearColor(0);
     sceGuClear(GU_COLOR_BUFFER_BIT);
 
-    // color
-    sceGuColor(colors[0]);
-
     // draw vertices
-    struct Vertex* vertices =
+    struct Vertex* player_vertices =
       sceGuGetMemory(NUM_VERTICES * sizeof(struct Vertex));
+
+    draw_player(player_vertices, &scene);
 
     // button_input.Lx is something between 0 and 255
     float x_diff = button_input.Lx - 128;
@@ -155,34 +256,14 @@ int main(int argc, char* argv[])
     }
     printf("lX: %.6f , lY %.6f", x_diff, y_diff);
 
-    vertices[0].x = scene.player.x;
-    vertices[0].y = scene.player.y;
-
-    vertices[1].x = scene.player.x + player_size;
-    vertices[1].y = scene.player.y;
-
-    vertices[2].x = scene.player.x + player_size;
-    vertices[2].y = scene.player.y + player_size;
-
-    vertices[3].x = scene.player.x;
-    vertices[3].y = scene.player.y + player_size;
-
-    vertices[4].x = scene.player.x;
-    vertices[4].y = scene.player.y;
-
-    sceGuDrawArray(GU_LINE_STRIP,
-                   GU_VERTEX_32BITF|GU_TRANSFORM_2D,
-                   NUM_VERTICES,
-                   0,
-                   vertices);
-
-    int i = 0;
-    for(i = 0; i < 4; i ++) {
-      int wagger_x = scene.waggers[i].x;
-      int wagger_y = scene.waggers[i].y;
+    int i;
+    for(i = 0; i < scene.wagger_len; i ++) {
       // wagger
       struct Vertex* wagger_vertices =
         sceGuGetMemory(5 * sizeof(struct Vertex));
+
+      int wagger_x = scene.waggers[i].x;
+      int wagger_y = scene.waggers[i].y;
 
       if(wagger_y < 25) {
         wagger_move = 1;
@@ -192,48 +273,15 @@ int main(int argc, char* argv[])
         wagger_move = -1;
       }
 
-      // color
-      int player_right_x = scene.player.x + scene.scroll + player_size;
-      int player_left_x = scene.player.x + scene.scroll;
-      if(player_right_x >= wagger_x &&
-         player_left_x <= wagger_x + wagger_size) {
-        int player_top_y = scene.player.y;
-        int player_bottom_y = scene.player.y + player_size;
-        if(player_top_y <= wagger_y + wagger_size &&
-           player_bottom_y >= wagger_y) {
-          sceGuColor(colors[4]);
-        } else {
-          sceGuColor(colors[2]);
-        }
-      } else {
-        sceGuColor(colors[2]);
-      }
-
       scene.waggers[i].y += wagger_move;
-
-      int wagx = wagger_x - scene.scroll;
-
-      wagger_vertices[0].x = wagx;
-      wagger_vertices[0].y = wagger_y;
-
-      wagger_vertices[1].x = wagx + wagger_size;
-      wagger_vertices[1].y = wagger_y;
-
-      wagger_vertices[2].x = wagx + wagger_size;
-      wagger_vertices[2].y = wagger_y + wagger_size;
-
-      wagger_vertices[3].x = wagx;
-      wagger_vertices[3].y = wagger_y + wagger_size;
-
-      wagger_vertices[4].x = wagx;
-      wagger_vertices[4].y = wagger_y;
-
-      sceGuDrawArray(GU_LINE_STRIP,
-                     GU_VERTEX_32BITF|GU_TRANSFORM_2D,
-                     NUM_VERTICES,
-                     0,
-                     wagger_vertices);
+      draw_wagger(wagger_vertices, &scene, i);
     }
+
+    // goal vertices
+    struct Vertex* goal_vertices =
+      sceGuGetMemory(2 * sizeof(struct Vertex));
+
+    draw_goal(goal_vertices, &scene);
 
     // wait for next frame
     sceGuFinish();
