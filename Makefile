@@ -1,5 +1,5 @@
 TARGET=app
-OBJS=main.o callbacks.o vram.o
+OBJS=main.o callbacks.o vram.o font.c
 
 INCDIR=
 CFLAGS=-G0 -Wall -O2
@@ -17,3 +17,6 @@ PSP_EBOOT_TITLE=waggers
 
 PSPSDK=$(shell psp-config --pspsdk-path)
 include $(PSPSDK)/lib/build.mak
+
+font.c: font.raw
+	bin2c font.raw font.c font
