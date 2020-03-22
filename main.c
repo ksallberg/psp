@@ -164,12 +164,11 @@ void drawString(const char* text, int x, int y, unsigned int color, int fw) {
                   );
 }
 
-void draw_wagger(struct Vertex *vertices, Scene *scene, int index) {
+int collides(Scene *scene, int index) {
   int wagger_x = scene->waggers[index].x;
   int wagger_y = scene->waggers[index].y;
   int wagger_size = 50;
   int player_size = 25;
-  // color
   int player_right_x = scene->player.x + scene->scroll + player_size;
   int player_left_x = scene->player.x + scene->scroll;
   if(player_right_x >= wagger_x &&
@@ -178,10 +177,20 @@ void draw_wagger(struct Vertex *vertices, Scene *scene, int index) {
     int player_bottom_y = scene->player.y + player_size;
     if(player_top_y <= wagger_y + wagger_size &&
        player_bottom_y >= wagger_y) {
-      sceGuColor(colors[4]);
-    } else {
-      sceGuColor(colors[2]);
+      return 1;
     }
+  }
+  return 0;
+}
+
+void draw_wagger(struct Vertex *vertices, Scene *scene, int index) {
+  int wagger_x = scene->waggers[index].x;
+  int wagger_y = scene->waggers[index].y;
+  int wagger_size = 50;
+
+  int does_collide = collides(scene, index);
+  if(does_collide) {
+    sceGuColor(colors[4]);
   } else {
     sceGuColor(colors[2]);
   }
@@ -262,6 +271,28 @@ draw_goal(struct Vertex *vertices, Scene *scene) {
 scene_for_level(Scene *scene, int level) {
   switch(level) {
   case 1:
+    scene->goal = 300;
+    scene->wagger_len = 1;
+    scene->waggers[0].x = 200;
+    scene->waggers[0].y = 100;
+    scene->scroll = 0;
+    scene->player.x = 50;
+    scene->player.y = 100;
+    break;
+
+  case 2:
+    scene->goal = 400;
+    scene->wagger_len = 2;
+    scene->waggers[0].x = 200;
+    scene->waggers[0].y = 100;
+    scene->waggers[1].x = 300;
+    scene->waggers[1].y = 160;
+    scene->scroll = 0;
+    scene->player.x = 50;
+    scene->player.y = 100;
+    break;
+
+  case 3:
     scene->goal = 600;
     scene->wagger_len = 4;
     scene->waggers[0].x = 200;
@@ -277,6 +308,7 @@ scene_for_level(Scene *scene, int level) {
     scene->player.y = 100;
     break;
 
+
   default:
     scene->goal = 0;
   }
@@ -284,11 +316,12 @@ scene_for_level(Scene *scene, int level) {
 
 int main(int argc, char* argv[])
 {
-
   int level = 1;
 
   int in_level = 1;
   int player_size = 25;
+
+  int health = 100;
 
   Scene scene;
 
@@ -343,87 +376,107 @@ int main(int argc, char* argv[])
   while(running()) {
 
     sceCtrlPeekBufferPositive(&button_input, 1);
-
     sceGuStart(GU_DIRECT,list);
 
     // clear screen
     sceGuClearColor(0);
     sceGuClear(GU_COLOR_BUFFER_BIT);
 
-    if(in_level) {
-      sceGuDisable(GU_BLEND); // needed for text but makes all else invisible
+    if(health > 0) {
+      if(in_level) {
+        sceGuDisable(GU_BLEND); // needed for text but makes all else invisible
 
-      // draw vertices
-      struct Vertex* player_vertices =
-        sceGuGetMemory(NUM_VERTICES * sizeof(struct Vertex));
+        // draw vertices
+        struct Vertex* player_vertices =
+          sceGuGetMemory(NUM_VERTICES * sizeof(struct Vertex));
 
-      draw_player(player_vertices, &scene);
+        draw_player(player_vertices, &scene);
 
-      // button_input.Lx is something between 0 and 255
-      float x_diff = button_input.Lx - 128;
-      float y_diff = button_input.Ly - 128;
+        // button_input.Lx is something between 0 and 255
+        float x_diff = button_input.Lx - 128;
+        float y_diff = button_input.Ly - 128;
 
-      if(abs(x_diff) > 20) {
-        scene.scroll += (x_diff / 33);
-      }
-      // Scroll bounds
-      if(scene.scroll < 0) {
-        scene.scroll = 0;
-      }
-
-      if(abs(y_diff) > 20) {
-        scene.player.y += (y_diff / 33);
-      }
-
-      // Player bounds
-      if(scene.player.y < 0) {
-        scene.player.y = 0;
-      } else if(scene.player.y + player_size > SCR_HEIGHT) {
-        scene.player.y = SCR_HEIGHT - player_size;
-      }
-      printf("lX: %.6f , lY %.6f", x_diff, y_diff);
-
-      int i;
-      for(i = 0; i < scene.wagger_len; i ++) {
-        // wagger
-        struct Vertex* wagger_vertices =
-          sceGuGetMemory(5 * sizeof(struct Vertex));
-
-        int wagger_x = scene.waggers[i].x;
-        int wagger_y = scene.waggers[i].y;
-
-        if(wagger_y < 25) {
-          wagger_move = 1;
+        if(abs(x_diff) > 20) {
+          scene.scroll += (x_diff / 33);
+        }
+        // Scroll bounds
+        if(scene.scroll < 0) {
+          scene.scroll = 0;
         }
 
-        if(wagger_y > 200) {
-          wagger_move = -1;
+        if(abs(y_diff) > 20) {
+          scene.player.y += (y_diff / 33);
         }
 
-        scene.waggers[i].y += wagger_move;
-        draw_wagger(wagger_vertices, &scene, i);
+        // Player bounds
+        if(scene.player.y < 0) {
+          scene.player.y = 0;
+        } else if(scene.player.y + player_size > SCR_HEIGHT) {
+          scene.player.y = SCR_HEIGHT - player_size;
+        }
+        printf("lX: %.6f , lY %.6f", x_diff, y_diff);
+
+        int i;
+        for(i = 0; i < scene.wagger_len; i ++) {
+          // wagger
+          struct Vertex* wagger_vertices =
+            sceGuGetMemory(5 * sizeof(struct Vertex));
+
+          int does_collide = collides(&scene, i);
+          if(does_collide) {
+            health --;
+          }
+
+          int wagger_x = scene.waggers[i].x;
+          int wagger_y = scene.waggers[i].y;
+
+          if(wagger_y < 25) {
+            wagger_move = 1;
+          }
+
+          if(wagger_y > 200) {
+            wagger_move = -1;
+          }
+
+          scene.waggers[i].y += wagger_move;
+          draw_wagger(wagger_vertices, &scene, i);
+        }
+
+        // goal vertices
+        struct Vertex* goal_vertices =
+          sceGuGetMemory(2 * sizeof(struct Vertex));
+
+        draw_goal(goal_vertices, &scene);
+
+        if(scene.scroll + scene.player.x + player_size >= scene.goal) {
+          in_level = 0;
+        }
+
+        sceGuEnable(GU_BLEND); // needed for text
+        char health_str[3];
+        snprintf(health_str, 6, "%d", health);
+        drawString(health_str, 10, 10, 0xFFC0FFEE, 0);
+
+        // If not in level
+      } else {
+        sceGuEnable(GU_BLEND); // needed for text
+        if(level == 3) {
+          drawString("Du klarade spelet!", 50, 128, 0xFFFFFFFF, 0);
+        } else {
+          char level_str[1];
+          snprintf(level_str, 2, "%d", level);
+          drawString("Du klarade banan  !", 50, 50, 0xFFC0FFEE, 0);
+          drawString(level_str, 185, 50, 0xFFC0FFEE, 0);
+          drawString("WOW - tryck X for att fortsatta", 50, 128, 0xFFFFFFFF, 0);
+          drawString("WOW", 50, 144, 0x7FFFFFFF, 0);
+          drawString("WOW", 50, 160, 0x18FFFFFF, 0);
+        }
       }
-
-      // goal vertices
-      struct Vertex* goal_vertices =
-        sceGuGetMemory(2 * sizeof(struct Vertex));
-
-      draw_goal(goal_vertices, &scene);
-
-      if(scene.scroll + scene.player.x + player_size >= scene.goal) {
-        in_level = 0;
-      }
-
-    // If not in level
     } else {
-      char level_str[1];
-      snprintf(level_str, 2, "%d", level);
+      in_level = 0;
       sceGuEnable(GU_BLEND); // needed for text
-      drawString("Du klarade banan  !", 50, 50, 0xFFC0FFEE, 0);
-      drawString(level_str, 185, 50, 0xFFC0FFEE, 0);
-      drawString("WOW", 50, 128, 0xFFFFFFFF, 0);
-      drawString("WOW", 50, 144, 0x7FFFFFFF, 0);
-      drawString("WOW", 50, 160, 0x18FFFFFF, 0);
+      drawString("GAME OVER!", 50, 50, 0xFFFF0000, 0);
+      drawString("tryck X for att spela igen", 50, 70, 0xFFFFFFFF, 0);
     }
 
     // wait for next frame
@@ -433,9 +486,16 @@ int main(int argc, char* argv[])
     pspDebugScreenSetXY(0, 0);
     if(button_input.Buttons != 0) {
       if(button_input.Buttons & PSP_CTRL_CROSS) {
-        scene.scroll = 0;
-        in_level = 1;
-        printf("x");
+        if(in_level == 0 && level < 3) {
+          in_level = 1;
+          level ++;
+          scene_for_level(&scene, level);
+        } else if (in_level == 0 && health <= 0) {
+          in_level = 1;
+          level = 1;
+          health = 100;
+          scene_for_level(&scene, level);
+        }
       }
       if(button_input.Buttons & PSP_CTRL_CIRCLE) {
         printf("o");
